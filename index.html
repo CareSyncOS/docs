@@ -5,58 +5,844 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareSyncOS - Developer Docs</title>
+    <!-- Setting the base path to the new root /docs/ -->
+    <base href="/">
 
-    <!-- 
-        This <base> tag is the key to fixing the pathing issues.
-        It tells the browser that all relative URLs (like those in app.js)
-        should be resolved from the /docs/ directory.
-    -->
-    <base href="/OS/docs/">
-    <link rel="stylesheet" href="/OS/docs/assets/css/style.css">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        /* Base styles (Dark Theme) */
+        :root {
+            --color-bg-dark: #1e293b;
+            --color-bg-light: #f1f5f9;
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #94a3b8;
+            --color-accent: #3b82f6;
+            --color-border: #334155;
+            --color-link-hover: #60a5fa;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            /* New: Width for the icon-only sidebar */
+        }
+
+        /* Light Theme Definition */
+        body.light-theme {
+            --color-bg-dark: #f8fafc;
+            /* Lighter background */
+            --color-bg-light: #ffffff;
+            --color-text-primary: #1e293b;
+            /* Darker text */
+            --color-text-secondary: #64748b;
+            --color-accent: #10b981;
+            /* Green accent */
+            --color-border: #e2e8f0;
+            --color-link-hover: #059669;
+        }
+
+        /* Applying the theme */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg-dark);
+            color: var(--color-text-primary);
+            margin: 0;
+            padding: 0;
+            display: grid;
+            /* Initial state: Pinned (full width sidebar) */
+            grid-template-areas:
+                "header header"
+                "sidebar main";
+            grid-template-rows: 64px 1fr;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            height: 100vh;
+            /* overflow: hidden; */
+            transition: grid-template-columns 0.3s ease-in-out;
+        }
+
+        body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: var(--color-bg-dark);
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background-color: var(--color-border);
+            border-radius: 4px;
+            border: 2px solid var(--color-bg-dark);
+        }
+
+        body::-webkit-scrollbar-thumb:hover {
+            background-color: var(--color-text-secondary);
+        }
+
+        .light-theme body::-webkit-scrollbar-track {
+            background: var(--color-bg-light);
+        }
+
+        .light-theme body::-webkit-scrollbar-thumb {
+            border: 2px solid var(--color-bg-light);
+        }
+
+        /* Layout Structure */
+        .header {
+            grid-area: header;
+            background-color: #0f172a;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .light-theme .header {
+            background-color: var(--color-bg-light);
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            overflow-y: auto;
+            border-right: 1px solid var(--color-border);
+            padding: 20px 0;
+            background-color: var(--color-bg-dark);
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+            z-index: 5;
+            position: relative;
+            /* Needed for z-index and hover to work correctly */
+            height: 100%;
+            /* Ensure it fills the grid area height */
+        }
+
+        /* write code for the sidebar scroll bar, make it stylish and shrink it */
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: var(--color-bg-dark);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: var(--color-border);
+            border-radius: 4px;
+            border: 2px solid var(--color-bg-dark);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: var(--color-text-secondary);
+        }
+
+        .light-theme .sidebar::-webkit-scrollbar-track {
+            background: var(--color-bg-light);
+        }
+
+        .light-theme .sidebar::-webkit-scrollbar-thumb {
+            border: 2px solid var(--color-bg-light);
+        }
+
+
+        .main-content {
+            grid-area: main;
+            overflow-y: auto;
+            display: flex;
+            padding: 30px 40px;
+            gap: 40px;
+        }
+
+        /* --- Sidebar Collapsed State (when not pinned) --- */
+        body.sidebar-collapsed:not(.sidebar-pinned) {
+            /* Shrink the sidebar grid column to the new collapsed width */
+            grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+        }
+
+        body.sidebar-collapsed .sidebar {
+            /* No transform needed, it just occupies the smaller grid area */
+            overflow: visible;
+            /* Allow tooltips to show outside the sidebar bounds */
+        }
+
+        /* Hide text and adjust layout in collapsed mode */
+        body.sidebar-collapsed .nav-link .link-text,
+        body.sidebar-collapsed .collapsible-header .link-text,
+        body.sidebar-collapsed .collapsible-header .fa-chevron-right {
+            display: none;
+        }
+
+        body.sidebar-collapsed .nav-link,
+        body.sidebar-collapsed .collapsible-header {
+            justify-content: center;
+            /* Center the icon */
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        /* Tooltip style for collapsed icons */
+        body.sidebar-collapsed .nav-link .link-text,
+        body.sidebar-collapsed .collapsible-header .link-text {
+            display: block;
+            /* Re-appear for the tooltip */
+            position: absolute;
+            left: var(--sidebar-collapsed-width);
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #0f172a;
+            color: var(--color-text-primary);
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--color-border);
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 101;
+            /* Above header */
+        }
+
+        body.sidebar-collapsed .nav-link:hover .link-text,
+        body.sidebar-collapsed .collapsible-header:hover .link-text {
+            opacity: 1;
+            visibility: visible;
+        }
+
+
+        /* Header Elements */
+        .header-logo {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            text-decoration: none;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-search {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+            background-color: #334155;
+            color: var(--color-text-primary);
+            width: 250px;
+            transition: background-color 0.3s;
+        }
+
+        .light-theme .header-search {
+            background-color: var(--color-bg-light);
+            color: var(--color-text-primary);
+        }
+
+        /* Sidebar Elements */
+        .sidebar-header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 15px 15px 0;
+        }
+
+        .pin-toggle {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+            padding: 5px;
+        }
+
+        .pin-toggle:hover {
+            color: var(--color-link-hover);
+        }
+
+        /* Pinned state visual cues */
+        body.sidebar-pinned .pin-toggle i {
+            transform: rotate(45deg);
+            color: var(--color-accent);
+        }
+
+        /* The sidebar-search inside the sidebar is now unnecessary as we have the header search */
+        /* Removing the original .sidebar-search CSS */
+
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav li {
+            margin: 0;
+        }
+
+        /* Flexbox for icon + text alignment */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 20px;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .nav-link:hover {
+            color: var(--color-text-primary);
+            background-color: #334155;
+        }
+
+        /* Light theme overrides */
+        .light-theme .nav-link:hover {
+            background-color: var(--color-border);
+        }
+
+        /* Highlight the active link */
+        .nav-link.active {
+            color: var(--color-accent);
+            background-color: rgba(59, 130, 246, 0.2);
+            font-weight: 600;
+            border-left: 3px solid var(--color-accent);
+            padding-left: 17px;
+        }
+
+        /* Collapsible Section Styling */
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            /* Keep this for vertical alignment */
+            justify-content: space-between;
+            /* This will be overridden when collapsed */
+            gap: 15px;
+            padding: 8px 20px;
+            font-weight: 500;
+            color: var(--color-text-primary);
+            cursor: pointer;
+            margin-top: 10px;
+            transition: color 0.15s;
+        }
+
+        .collapsible-header:hover {
+            color: var(--color-link-hover);
+        }
+
+        .collapsible-header i {
+            transition: transform 0.2s;
+        }
+
+        .collapsible.open .collapsible-header i {
+            transform: rotate(90deg);
+        }
+
+        .collapsible-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+            padding-bottom: 5px;
+        }
+
+        .collapsible.open .collapsible-body {
+            max-height: 500px;
+        }
+
+        .collapsible-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .collapsible-body li .nav-link {
+            padding-left: 40px;
+        }
+
+        /* Main Content and TOC */
+        .content-body {
+            flex-grow: 1;
+            max-width: 800px;
+        }
+
+        .toc-wrapper {
+           position: absolute;
+           top: 100px;
+           right: 100px;
+            height: fit-content;
+            width: 250px;
+            padding-left: 20px;
+            border-left: 1px solid var(--color-border);
+        }
+
+        .toc-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-list li a {
+            display: block;
+            padding: 4px 0;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.15s;
+        }
+
+        .toc-list li a:hover {
+            color: var(--color-link-hover);
+        }
+
+        /* Content Typography */
+        h1,
+        h2,
+        h3 {
+            color: var(--color-text-primary);
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 5px;
+        }
+
+        h1 {
+            font-size: 2rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+        }
+
+        p,
+        ul {
+            line-height: 1.7;
+            margin-bottom: 1em;
+        }
+
+        section {
+            padding-top: 20px;
+        }
+
+        strong {
+            color: var(--color-accent);
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .breadcrumbs a.nav-link {
+            padding: 0;
+            background: none;
+            font-weight: normal;
+        }
+
+        .breadcrumbs a.nav-link:hover {
+            color: var(--color-link-hover);
+        }
+
+        .breadcrumbs span:last-child {
+            color: var(--color-text-primary);
+            font-weight: 600;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 1024px) {
+
+            /* On tablet/desktop, disable hover collapse if space is constrained */
+            body {
+                grid-template-columns: 240px 1fr;
+            }
+
+            .toc-wrapper {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            /* On mobile, sidebar is always open and takes up full width on top */
+            body {
+                grid-template-areas:
+                    "header header"
+                    "sidebar sidebar"
+                    "main main";
+                grid-template-rows: 64px auto 1fr;
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-right: none;
+                max-height: 300px;
+                border-bottom: 1px solid var(--color-border);
+                position: relative;
+                /* Not absolute on mobile */
+                transform: translateX(0);
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .sidebar-header {
+                display: none;
+                /* Hide pin button on mobile */
+            }
+        }
+    </style>
 </head>
 
-<body>
+<body class="sidebar-pinned">
 
     <header class="header">
-        <!-- The logo can be a link back to the main docs page -->
-        <a href="/OS/docs/" class="header-logo" style="display: flex; width: 100%;">CareSyncOS Docs</a>
-        <!-- Theme toggle button -->
-        <button class="theme-toggle" id="theme-toggle" title="Toggle theme" style="background-color: transparent; color: inherit; border: none; cursor: pointer;"><i class="fa-solid fa-moon"></i></button>
+        <a href="/" class="header-logo" style="display: flex;">CareSyncOS Docs</a>
+        <div class="header-right">
+            <!-- New Search Input -->
+            <input type="text" class="header-search" id="headerSearch" placeholder="Search across docs...">
+            <!-- Theme Toggle -->
+            <button class="theme-toggle" id="theme-toggle" title="Toggle theme"
+                style="background-color: transparent; color: inherit; border: none; cursor: pointer;"><i
+                    class="fa-solid fa-moon"></i></button>
+        </div>
     </header>
 
-    <nav class="sidebar">
-        <input type="text" class="sidebar-search" id="sidebarSearch" placeholder="Search docs...">
+    <nav class="sidebar" id="sidebar">
+        <!-- Pin Button added inside sidebar -->
+        <div class="sidebar-header">
+            <button class="pin-toggle" id="pinToggle" title="Pin sidebar"><i class="fa-solid fa-thumbtack"></i></button>
+        </div>
+        <!-- Search bar inside sidebar removed, now only the dynamic nav list -->
         <ul class="sidebar-nav" id="sidebarNav">
-            <li><a href="pages/01-introduction.html" class="nav-link">Introduction</a></li>
-            
-            <!-- This is an example of a collapsible section for a sub-directory -->
-            <li class="collapsible">
-                <div class="collapsible-header">Getting Started</div>
-                <div class="collapsible-body">
-                    <ul>
-                        <li><a href="pages/getting-started/01-installation.html" class="nav-link">Installation</a></li>
-                        <li><a href="pages/getting-started/02-configuration.html" class="nav-link">Configuration</a></li>
-                    </ul>
-                </div>
-            </li>
+            <!-- Dynamic content goes here -->
         </ul>
     </nav>
 
     <main class="main-content">
         <div class="content-body" id="content-wrapper">
+            <!-- START: Static Content for Introduction Page -->
+            <div class="breadcrumbs">
+                <a href="/" class="nav-link">Docs</a>
+                <span>/</span>
+                <span>Introduction</span>
+            </div>
+
+            <section id="introduction">
+                <h1>Welcome to the CareSyncOS Docs</h1>
+                <p>
+                    This documentation is the central source of truth for developers working on the
+                    <strong>CareSyncOS</strong> platform. Its purpose is to provide all the necessary information to
+                    understand the architecture, set up a local development environment, and contribute effectively and
+                    consistently to the project.
+                </p>
+                <p>
+                    Whether you are a new developer joining the team or an experienced contributor looking for specific
+                    information, this site is your primary resource.
+                </p>
+            </section>
+
+            <section id="how-to-use">
+                <h2 id="how-to-use-docs">How to Use These Docs</h2>
+                <p>
+                    The documentation is designed to be easy to navigate:
+                </p>
+                <ul>
+                    <li>
+                        <strong>Main Navigation (Left Sidebar):</strong> The primary navigation on the left groups
+                        documentation into logical categories like "Local Development," "Database Schema," and "Backend
+                        Architecture." Use this to explore the main topics.
+                    </li>
+                    <li>
+                        <strong>On This Page (Right Sidebar):</strong> For longer articles, a table of contents will
+                        automatically appear on the right. Use this to quickly jump to a specific section on the current
+                        page.
+                    </li>
+                    <li>
+                        <strong>Search:</strong> The search bar at the top of the sidebar allows you to quickly find
+                        pages by keyword.
+                    </li>
+                </ul>
+            </section>
+
+            <section id="whats-inside">
+                <h2 id="whats-inside-docs">What You'll Find Inside</h2>
+                <p>
+                    This documentation covers the entire system, from high-level concepts to low-level implementation
+                    details. You will find detailed guides on the project's architecture, database schema, key business
+                    logic workflows, and instructions for setting up a local development environment.
+                </p>
+            </section>
+            <!-- END: Static Content -->
         </div>
+
+        <!-- Static Table of Contents (TOC) for the current page -->
         <aside class="toc-wrapper">
             <div class="toc-title">On this page</div>
             <ul class="toc-list" id="autoToc">
+                <li><a href="#introduction">Welcome to the CareSyncOS Docs</a></li>
+                <li><a href="#how-to-use">How to Use These Docs</a></li>
+                <li><a href="#whats-inside">What You'll Find Inside</a></li>
             </ul>
         </aside>
     </main>
 
-    <script src="/OS/docs/assets/js/theme.js"></script>
-    <script src="/OS/docs/assets/js/features.js"></script>
-    <script src="/OS/docs/assets/js/app.js"></script>
+    <script>
+        // --- CENTRAL NAVIGATION DATA (The Single Source of Truth!) ---
+        const DOC_STRUCTURE = [
+            // Root Files
+            { title: "Introduction", path: "index.html", icon: "fa-solid fa-house" },
+            { title: "Installation", path: "pages/02-local-development-setup.html", icon: "fa-solid fa-download" },
+            // Getting Started (Example from previous turn)
+            {
+                title: "Getting Started",
+                isCollapsible: true, icon: "fa-solid fa-rocket",
+                children: [
+                    { title: "Installation", path: "pages/getting-started/01-installation.html" },
+                    { title: "Configuration", path: "pages/getting-started/02-configuration.html" },
+                ]
+            },
+
+            // 03-architecture
+            {
+                title: "Backend Architecture",
+                isCollapsible: true, icon: "fa-solid fa-server",
+                children: [
+                    { title: "01 Overview", path: "pages/03-architecture/01-overview.html" },
+                    { title: "02 Request Flow", path: "pages/03-architecture/02-request-flow.html" },
+                    { title: "03 Logging System", path: "pages/03-architecture/03-logging-system.html" },
+                ]
+            },
+
+            // 04-common-utilities
+            {
+                title: "Common Utilities",
+                isCollapsible: true, icon: "fa-solid fa-screwdriver-wrench",
+                children: [
+                    { title: "01 Authentication", path: "pages/04-common-utilities/01-authentication.html" },
+                    { title: "02 Database Handler", path: "pages/04-common-utilities/02-database-handler.html" },
+                    { title: "03 Configuration", path: "pages/04-common-utilities/03-configuration.html" },
+                ]
+            },
+
+            // 05-database-schema
+            {
+                title: "Database Schema",
+                isCollapsible: true, icon: "fa-solid fa-database",
+                children: [
+                    { title: "01 Overview / ER Diagram", path: "pages/05-database-schema/01-overview-and-er-diagram.html" },
+                    { title: "02 Core Tables", path: "pages/05-database-schema/02-core-tables.html" },
+                    { title: "03 Patient Related Tables", path: "pages/05-database-schema/03-patient-related-tables.html" },
+                    { title: "04 System Tables", path: "pages/05-database-schema/04-system-tables.html" },
+                    { title: "05 Financial Tables", path: "pages/05-database-schema/05-financial-tables.html" },
+                    { title: "06 Diagnostics Tables", path: "pages/05-database-schema/06-diagnostics-tables.html" },
+                    { title: "07 Auxiliary Tables", path: "pages/05-database-schema/07-auxiliary-tables.html" },
+                ]
+            },
+
+            // 06-admin-module
+            {
+                title: "Admin Module",
+                isCollapsible: true, icon: "fa-solid fa-user-shield",
+                children: [
+                    { title: "01 Overview", path: "pages/06-admin-module/01-overview.html" },
+                    { title: "02 Views", path: "pages/06-admin-module/02-views.html" },
+                    { title: "03 API Endpoints", path: "pages/06-admin-module/03-api-endpoints.html" },
+                    { title: "04 Client-Side Scripts", path: "pages/06-admin-module/04-client-side-scripts.html" },
+                ]
+            },
+
+            // 07-reception-module
+            {
+                title: "Reception Module",
+                isCollapsible: true, icon: "fa-solid fa-bell-concierge",
+                children: [
+                    { title: "01 Introduction", path: "pages/07-reception-module/01-introduction.html" },
+                    { title: "02 Local Development Setup", path: "pages/07-reception-module/02-local-development-setup.html" },
+                ]
+            },
+        ];
+
+        // Function to render the navigation recursively
+        function renderNavigation(items, targetElement) {
+            // Get the full URL path for comparison
+            const currentURL = window.location.pathname + window.location.search;
+
+            const ul = document.createElement('ul');
+            ul.classList.add('sidebar-nav');
+
+            items.forEach(item => {
+                const li = document.createElement('li');
+
+                if (item.isCollapsible && item.children) {
+                    li.classList.add('collapsible');
+
+                    const header = document.createElement('div');
+                    header.classList.add('collapsible-header');
+                    // Add icon and text spans
+                    header.innerHTML = `
+                        <i class="${item.icon || 'fa-solid fa-folder'}"></i>
+                        <span class="link-text">${item.title}</span>
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    `;
+                    header.addEventListener('click', () => toggleCollapsible(li));
+
+                    li.appendChild(header);
+
+                    const body = document.createElement('div');
+                    body.classList.add('collapsible-body');
+
+                    const childrenUl = renderNavigation(item.children, body);
+                    body.appendChild(childrenUl);
+                    li.appendChild(body);
+
+                    // Open the collapsible if any child link is the active page
+                    const isActive = Array.from(childrenUl.querySelectorAll('.nav-link.active')).length > 0;
+                    if (isActive) {
+                        li.classList.add('open');
+                    }
+
+                } else {
+                    const a = document.createElement('a');
+                    a.href = item.path;
+                    a.classList.add('nav-link');
+                    // Add icon and text spans
+                    a.innerHTML = `
+                        <i class="${item.icon || 'fa-solid fa-file-lines'}"></i>
+                        <span class="link-text">${item.title}</span>
+                    `;
+
+                    // Robust Logic to set the 'active' class: check if the URL includes the link path
+                    if (item.path && currentURL.includes(item.path)) {
+                        a.classList.add('active');
+                    }
+
+                    li.appendChild(a);
+                }
+
+                targetElement.appendChild(li);
+            });
+            return ul;
+        }
+
+        // Function to toggle collapsible sections
+        function toggleCollapsible(li) {
+            li.classList.toggle('open');
+        }
+
+        // --- Theme Management ---
+        const themeKey = 'careSyncTheme';
+
+        function applyTheme(isLight) {
+            document.body.classList.toggle('light-theme', isLight);
+            const icon = document.getElementById('theme-toggle').querySelector('i');
+            icon.classList.toggle('fa-sun', isLight);
+            icon.classList.toggle('fa-moon', !isLight);
+        }
+
+        function initTheme() {
+            // Default to dark, or read from localStorage
+            const storedTheme = localStorage.getItem(themeKey);
+            const isLight = storedTheme === 'light';
+            applyTheme(isLight);
+        }
+
+        function toggleTheme() {
+            const isLight = !document.body.classList.contains('light-theme');
+            applyTheme(isLight);
+            localStorage.setItem(themeKey, isLight ? 'light' : 'dark');
+        }
+
+        // --- Sidebar Management ---
+        const pinKey = 'careSyncSidebarPinned';
+        const body = document.body;
+
+        function initSidebar() {
+            const isPinned = localStorage.getItem(pinKey) !== 'false'; // Default to pinned
+            setSidebarPinState(isPinned);
+        }
+
+        function setSidebarPinState(isPinned) {
+            body.classList.toggle('sidebar-pinned', isPinned);
+            body.classList.toggle('sidebar-collapsed', !isPinned);
+            localStorage.setItem(pinKey, isPinned);
+        }
+
+        function toggleSidebarPin() {
+            const isPinned = !body.classList.contains('sidebar-pinned');
+            setSidebarPinState(isPinned);
+        }
+
+
+        // --- Main Execution ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebarNav = document.getElementById('sidebarNav');
+
+            // 1. Initialize Theme
+            initTheme();
+
+            // 2. Initialize Sidebar state
+            initSidebar();
+
+            // 3. Set up listeners
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('pinToggle').addEventListener('click', toggleSidebarPin);
+
+            // 4. Render Navigation
+            sidebarNav.innerHTML = '';
+            DOC_STRUCTURE.forEach(item => {
+                const li = document.createElement('li');
+
+                if (item.isCollapsible) {
+                    li.classList.add('collapsible');
+                    const header = document.createElement('div');
+                    header.classList.add('collapsible-header');
+                    header.innerHTML = `
+                        <i class="${item.icon || 'fa-solid fa-folder'}"></i>
+                        <span class="link-text">${item.title}</span>
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    `;
+                    header.addEventListener('click', () => toggleCollapsible(li));
+
+                    const body = document.createElement('div');
+                    body.classList.add('collapsible-body');
+                    const childrenUl = renderNavigation(item.children, body);
+                    body.appendChild(childrenUl);
+
+                    li.appendChild(header);
+                    li.appendChild(body);
+
+                    const isActive = childrenUl.querySelector('.nav-link.active');
+                    if (isActive) {
+                        li.classList.add('open');
+                    }
+                } else {
+                    const a = document.createElement('a');
+                    a.href = item.path;
+                    a.classList.add('nav-link');
+                    a.innerHTML = `
+                        <i class="${item.icon || 'fa-solid fa-file-lines'}"></i>
+                        <span class="link-text">${item.title}</span>
+                    `;
+
+                    if (item.path && (window.location.pathname + window.location.search).includes(item.path)) {
+                        a.classList.add('active');
+                    }
+                    li.appendChild(a);
+                }
+                sidebarNav.appendChild(li);
+            });
+        });
+    </script>
 </body>
 
 </html>
